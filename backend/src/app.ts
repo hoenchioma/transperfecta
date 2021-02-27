@@ -1,13 +1,14 @@
 import express from 'express';
 import { readFile } from 'fs';
 import { join } from 'path';
-import { PerfHashTable, makeFunc } from './lib/perfect-hashing';
+import { PerfHashTable, get } from './lib/perfect-hashing';
 
 const app = express();
-const port = 3000;
-const addr = '0.0.0.0';
+const port = +(process.env.PORT || 5000);
+const addr = process.env.ADDR || '0.0.0.0';
 let dict: (PerfHashTable | null) = null; // will contain the dictionary
 
+// read file and store in dict
 readFile(join(__dirname, '../data/hashed-dict.json'), 'utf8', (err, data) => {
     if (err) {
         console.log("Error reading file ...");
@@ -18,24 +19,18 @@ readFile(join(__dirname, '../data/hashed-dict.json'), 'utf8', (err, data) => {
     }
 });
 
+// default route
 app.get('/', (req, res) => {
     res.send('Welcome to the Dictionary API 😃');
 });
 
+// dictionary api route
 app.get('/dict', (req, res) => {
     if (dict === null) {
         return res.json({ error: "dictionary not loaded" })
     } else {
         const { word } = req.query;
-        const hash = makeFunc(dict.hashFunc);
-        const key = hash(word as string);
-        const sdict = dict.data[key];
-        if (sdict === null) {
-            return res.json({ error: "word not found" });
-        }
-        const shash = makeFunc(sdict.hashFunc);
-        const skey = shash(word as string);
-        const data = sdict.data[skey];
+        const data = get(dict, word as string);
         if (data === null) {
             return res.json({ error: "word not found" });
         } else {

@@ -1,5 +1,6 @@
 import { DictItem } from 'lib/types';
 
+// contains necessary info to create a hash function instance
 export interface UnivHashFuncInfo {
     a: number,
     p: number,
@@ -14,6 +15,7 @@ export interface PerfHashTable {
     data: Array<SecHashTable | null>,
 }
 
+// create a universal hash family for a set of keys (of size m)
 function getRandUnivHashFunc(m: number): UnivHashFuncInfo {
     // returns a prime number greater than n
     function getNextPrime(n: number): number {
@@ -38,14 +40,17 @@ function getRandUnivHashFunc(m: number): UnivHashFuncInfo {
         return Math.floor(Math.random() * (max - min)) + min;
     }   
 
-    const p = getNextPrime(Math.max(m, 65536));
+    const p = getNextPrime(Math.max(m, 65536)); // 65536 is the alphabet size (16 bit)
     const a = getRandInt(1, p);
 
     return {a, p, m};
 }
 
-export function makeFunc(info: UnivHashFuncInfo) {
+// construct the function (universal hash function) from the info
+function makeFunc(info: UnivHashFuncInfo) {
     const { a, p, m } = info;
+    // universal hashing for strings
+    // https://en.wikipedia.org/wiki/Universal_hashing#Hashing_strings
     return (key: string) => {
         const n = key.length;
         let h = 0;
@@ -57,58 +62,81 @@ export function makeFunc(info: UnivHashFuncInfo) {
     }
 }
 
+// make a perfect hash table from an array of data
 export function genPerfHashTable(data: DictItem[]): PerfHashTable {
     const m = data.length;
     const hashFuncInfo = getRandUnivHashFunc(m);
     const hash = makeFunc(hashFuncInfo);
     
+    // primary hash
     const tmp: DictItem[][] = new Array(m).fill(null);
     for (const entry of data) {
-        const { en: key } = entry;
+        const { en: key } = entry; // use the en key of record as key
         const ind = hash(key);
         if (tmp[ind] === null) tmp[ind] = []
         tmp[ind].push(entry);
     }
 
     const res: PerfHashTable = {
-        hashFunc: hashFuncInfo,
+        hashFunc: hashFuncInfo, // primary hash funciton
         data: new Array<SecHashTable | null>(m).fill(null),
     }
+
+    // secondary hash
     for (let i = 0; i < m; i++) {
         const mi = tmp[i]?.length || 0;
-        // console.log(i, mi);
-        if (mi > 0) {
-            let secTmp = new Array<DictItem | null>(mi*mi);
+
+        if (mi > 0) { // if at least one element hashed into this slot
+            let secTmp = new Array<DictItem | null>(mi*mi); // make a hash table of size n^2
             let col = false, cnt = 0, hashFuncInfo;
+
+            // try hashing until no collisions occur
             do {
                 hashFuncInfo = getRandUnivHashFunc(mi*mi);
                 const hash = makeFunc(hashFuncInfo);
                 col = false;
                 secTmp.fill(null);
                 for (const entry of tmp[i]) {
-                    const { en: key } = entry;
+                    const { en: key } = entry; // use the en key of record as key
                     const ind = hash(key);
                     if (secTmp[ind] === null) {
                         secTmp[ind] = entry;
-                    } else if (secTmp[ind]?.en === key) {
+                    } else if (secTmp[ind]?.en === key) { // ignore duplicate keys
                         console.log(`duplicate key ${key} !! ignoring...`);
                     } else {
                         col = true;
                         break;
                     }
                 }
-                if (++cnt > mi*mi) {
+                if (++cnt > mi*mi) { // trying too many times (fail-safe just in case)
                     console.log({i, mi});
                     console.log({tmp: tmp[i], secTmp});
                     throw new Error(`repeated collision!! something's wrong :(`);
                 }
             } while (col); // repeat until a collision free run
+
             res.data[i] = {
-                hashFunc: hashFuncInfo,
+                hashFunc: hashFuncInfo, // secondary hash function
                 data: secTmp,
             };
         }
     }
 
     return res;
+}
+
+// get data from perfect hash table
+export function get(dict: PerfHashTable, keyStr: string): (DictItem | null) {
+    // search in primary hash table
+    const hash = makeFunc(dict.hashFunc);
+    const key = hash(keyStr);
+    const sdict = dict.data[key];
+    if (sdict === null) return null; // key not found in primary hash table
+
+    // search in secondary hash table
+    const shash = makeFunc(sdict.hashFunc);
+    const skey = shash(keyStr);
+    const data = sdict.data[skey];
+
+    return data;
 }
