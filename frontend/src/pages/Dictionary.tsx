@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import cn from 'classnames';
-import { Search } from 'react-bootstrap-icons'
+import { Search, VolumeUp } from 'react-bootstrap-icons'
 import axios from 'axios';
 import queryString from 'query-string';
+import SayButton from '../components/SayButton';
 
 const styles = {
 	header: {
@@ -159,13 +160,29 @@ const Dictionary: React.FC<any> = ({ location, history }): JSX.Element => {
 					data
 						? (
 							<>
-								<h1 style={{
-									fontFamily: 'Playfair Display',
-									fontWeight: 400,
-									// color: '#0597F2',
-								}}>
-									{word}
-								</h1>
+								<div
+									className={cn(
+										'd-flex',
+										'flex-row',
+										'justify-content-start',
+									)}
+								>
+									<h1 style={{
+										fontFamily: 'Playfair Display',
+										fontWeight: 400,
+										// color: '#0597F2',
+									}}>
+										{word}
+									</h1>
+									<SayButton
+										className={cn(
+											'btn',
+										)}
+										text={data.en}	
+									>
+										<VolumeUp style={{ color: '#FFC700'}}/>
+									</SayButton>
+								</div>
 								<hr
 									className="col-12 my-2 mb-4"
 									style={{
@@ -174,7 +191,7 @@ const Dictionary: React.FC<any> = ({ location, history }): JSX.Element => {
 									}}
 								/>
 								<h4 className="mt-2" style={styles.header}>Translation</h4>
-								<text>{data?.bn}</text>
+								<text style={styles.text}>{`${data?.bn} (${data?.pron[1]})`}</text>
 								{!!data?.bn_syns?.length && (
 									<>
 										<h4 className="mt-3" style={styles.header}>Bangla Synonyms</h4>
@@ -201,13 +218,13 @@ const Dictionary: React.FC<any> = ({ location, history }): JSX.Element => {
 							</>
 						)
 						: (
-							<h3	
+							<h3
 								className={cn(
 									'align-self-center',
 									'text-warning',
 								)}
 							>
-								{loading? "Loading...": "Word Not Found"}
+								{loading ? "Loading..." : "Word Not Found"}
 							</h3>
 						)
 				}
