@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import { readFile } from 'fs';
 import { join } from 'path';
 import { PerfHashTable, get } from './lib/perfect-hashing';
@@ -18,6 +19,9 @@ readFile(join(__dirname, '../data/hashed-dict.json'), 'utf8', (err, data) => {
         console.log("loaded dictionary from file successfully");
     }
 });
+
+// enable cors
+app.use(cors());
 
 // default route
 app.get('/', (req, res) => {
