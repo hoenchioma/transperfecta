@@ -3,6 +3,8 @@
 This is an English to Bangla dictionary website implemented using Perfect Hashing. 
 The backend is a NodeJS server written in Typescript, while the frontend is a ReactJS application.
 
+This is a project for the course CSE-3203 at University of Dhaka.
+
 The data for the dictionary was collected from [here](https://github.com/MinhasKamal/BengaliDictionary).
 
 You can view a demo of the website [here](https://transperfecta.herokuapp.com/).
