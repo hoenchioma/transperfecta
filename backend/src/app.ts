@@ -33,7 +33,8 @@ app.get('/dict', (req, res) => {
     if (dict === null) {
         return res.json({ error: "dictionary not loaded" })
     } else {
-        const { word } = req.query;
+        const { word: wordRaw } = req.query;
+        const word = (wordRaw as string)?.toLowerCase();
         const data = get(dict, word as string);
         if (data === null) {
             return res.json({ error: "word not found" });

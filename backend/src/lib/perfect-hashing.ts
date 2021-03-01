@@ -137,6 +137,9 @@ export function get(dict: PerfHashTable, keyStr: string): (DictItem | null) {
     const shash = makeFunc(sdict.hashFunc);
     const skey = shash(keyStr);
     const data = sdict.data[skey];
+    
+    // if false postive return nul
+    if (keyStr !== data?.en) return null;
 
     return data;
 }
